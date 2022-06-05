@@ -26,10 +26,14 @@ window_size = 2
 max_vocab_size = 10000#12673
 
 
-def get_sent_indexed(list_of_sentences):
+def get_sent_indexed(list_of_sentences, save=True):
     tokenizer = Tokenizer()
     tokenizer.fit_on_texts(list_of_sentences)
     sent_indexed = tokenizer.texts_to_sequences(list_of_sentences)
+    if save:
+        with open(mypath / 'tokenizer.pkltok', 'wb') as f:
+            pickle.dump((tokenizer), f)
+            print(f'just pickled tokenizer.pkltok')
     return sent_indexed
 
 
@@ -85,6 +89,7 @@ pos_samples_pairs = get_pos_samples(sentence_indexed)
 pos_samples_pairs = remove_duplicates(pos_samples_pairs)
 
 pos_samples_pairs = pos_samples_pairs#[:10000] ##??????????????????????????????
+
 print("starting neg sampling")
 neg_samples_pairs = get_neg_samples(pos_samples_pairs,vocab_size=max_vocab_size,neg_sample_size=2)
 print("just finished neg sampling")
@@ -99,6 +104,7 @@ neg_y_list = np.zeros(shape=len_neg)
 
 pos_neg_samp_pairs = np.concatenate((pos_samples_pairs, neg_samples_pairs),axis=0)
 pos_neg_y = np.concatenate((pos_y_list, neg_y_list), axis=0)
+
 print("beginning train test split")
 # x_train, x_test, y_train, y_test = train_test_split(pos_neg_samp_pairs, pos_neg_y_pairs,test_size=0.1)
 X_train, y_train = shuffle(pos_neg_samp_pairs,pos_neg_y)

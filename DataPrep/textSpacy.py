@@ -8,7 +8,7 @@ import pickle
 spacy.prefer_gpu()
 nlp = spacy.load('en_core_web_lg')
 nlp.max_length = 3000000
-test = "this is someting I need to test out. how are you. I'm doing just fine thanks for asking"
+# test = "this is someting I need to test out. how are you. I'm doing just fine thanks for asking"
 
 def get_sentences(sentences):
     new_list = []

@@ -1,14 +1,22 @@
 import numpy as np
 from sklearn.utils import shuffle
+import tensorflow as tf
 
-
-X_train = np.array([[1,2],[3,4],[5,6],[3,4],[1,1],[44,22]])
+X_train = np.array([[1,4],[3,2],[5,6],[3,4],[1,7],[5,10]])
 y_train = np.array([22,1,2,3,4,15])
 
-X, y = shuffle(X_train,y_train)
 
-print(X)
-print(y)
+for pair in X_train:
+    print(pair[0],tf.one_hot(pair[0],11))
+    print(pair[1],tf.one_hot(pair[1],11))
+    print(50*"*")
+
+
+
+# X, y = shuffle(X_train,y_train)
+#
+# print(X)
+# print(y)
 
 
 
