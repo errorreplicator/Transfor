@@ -34,7 +34,7 @@ def change_to_onehot(numbers_list,embed_size):
     return (word_one_hot,context_one_hot)
 
 
-def data_generator (X_samples, y_samples, embed_size, batch_size=32, shuffle_data=True):
+def data_generator (X_samples, y_samples, corp_size, batch_size=32, shuffle_data=True):
     num_samples = len(X_samples)
     while True:
 
@@ -53,7 +53,7 @@ def data_generator (X_samples, y_samples, embed_size, batch_size=32, shuffle_dat
             y_train = batch_y_samples
 
             for sample in batch_X_samples:
-                X_word_vec, X_context_vec = change_to_onehot(sample,embed_size)
+                X_word_vec, X_context_vec = change_to_onehot(sample, corp_size)
 
                 X_train_word.append(X_word_vec)
                 X_train_context.append(X_context_vec)
@@ -62,11 +62,11 @@ def data_generator (X_samples, y_samples, embed_size, batch_size=32, shuffle_dat
             X_train_context = np.array(X_train_context)
             y_train = np.array(y_train)
 
-            yield X_train_word,X_train_context,y_train
+            yield [X_train_word,X_train_context],y_train
 
 
 
-train_generator = data_generator(X_train,y_train,EMBED_SIZE)
+train_generator = data_generator(X_train,y_train,CORP_SIZE,batch_size=16)
 
 
 input_word = Input(shape=(CORP_SIZE,),name="word_layer_input")
@@ -83,17 +83,17 @@ output = Dense(1,activation='sigmoid',name="output_layer_1_sigmoid")(combined)
 
 model = Model(inputs = [word_layer.input,context_layer.input],outputs = output,name="final_model")
 
-# print(model.summary())
+print(model.summary())
 # plot_model(model, to_file=mypath/"model.png")
 
 opt = Adam(learning_rate=1e-3)
 
-model.compile(loss="binary_crossentropy",optimizer=opt,metrics=['accuracy'])
+model.compile(loss="binary_crossentropy",optimizer=opt,metrics=['accuracy'],)
 
 model.fit_generator(
    train_generator,
     epochs=200,
-    batch_size=8
+    verbose=1
 )
 
 
