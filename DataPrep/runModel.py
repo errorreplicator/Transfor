@@ -20,15 +20,18 @@ with open(mypath/'X_Y_index_pairs.pklxy','rb') as file:
 with open(mypath/'tokenizer.pkltok','rb') as file:
     tokenizer = pickle.load(file)
 
-CORP_SIZE = len(tokenizer.index_word)+1
-EMBED_SIZE = 100
+CORP_SIZE = 8000#len(tokenizer.index_word)+1
+EMBED_SIZE = 50
+BATCH_SIZE = 128
 
 # X_word = np.zeros((CORP_SIZE, EMBED_SIZE))
 # print(round(getsizeof(X_word) / 1024 / 1024,2), " MBs")
 
-def change_to_onehot(numbers_list,embed_size):
-    word_one_hot = np.zeros((1,embed_size))
-    context_one_hot = np.zeros((1, embed_size))
+def change_to_onehot(numbers_list, corp_size):
+    word_one_hot = np.zeros((1, corp_size))
+    context_one_hot = np.zeros((1, corp_size))
+    if numbers_list[0] >= corp_size or numbers_list[1] >= corp_size:
+        return  (word_one_hot,context_one_hot)
     word_one_hot[0][numbers_list[0]] = 1
     context_one_hot[0][numbers_list[1]] = 1
     return (word_one_hot,context_one_hot)
@@ -64,9 +67,46 @@ def data_generator (X_samples, y_samples, corp_size, batch_size=32, shuffle_data
 
             yield [X_train_word,X_train_context],y_train
 
+def data_generatorv2 (X_samples, y_samples, corp_size, batch_size=32, shuffle_data=True):
+    num_samples = len(X_samples)
+    one_hot_matrix = []
+    for i in range(corp_size):
+        one_hot_matrix.append([0 for _ in range(corp_size)])
+
+    for x in range(1, corp_size + 1):
+        one_hot_matrix[x][x] = 1
+
+    while True:
+
+        if shuffle_data:
+            X_samples, y_samples = shuffle(X_samples, y_samples)
 
 
-train_generator = data_generator(X_train,y_train,CORP_SIZE,batch_size=16)
+
+        for offset in range(0,num_samples,batch_size): # take 1st 32(batch size) pairs
+
+            batch_X_samples = X_samples[offset:offset+batch_size]
+            batch_y_samples = y_samples[offset:offset+batch_size]
+
+            X_train_word = []
+            X_train_context = []
+            y_train = batch_y_samples
+
+            for sample in batch_X_samples:
+
+                X_train_word.append(one_hot_matrix[sample[0]+1])
+                X_train_context.append(one_hot_matrix[sample[1]+1])
+
+            X_train_word = np.array(X_train_word)
+            X_train_context = np.array(X_train_context)
+            y_train = np.array(y_train)
+
+            yield [X_train_word,X_train_context],y_train
+
+
+print(len(X_train))
+
+train_generator = data_generatorv2(X_train,y_train,CORP_SIZE,batch_size=BATCH_SIZE,shuffle_data=False)
 
 
 input_word = Input(shape=(CORP_SIZE,),name="word_layer_input")
@@ -86,13 +126,14 @@ model = Model(inputs = [word_layer.input,context_layer.input],outputs = output,n
 print(model.summary())
 # plot_model(model, to_file=mypath/"model.png")
 
-opt = Adam(learning_rate=1e-3)
+opt = Adam(learning_rate=1e-2)
 
 model.compile(loss="binary_crossentropy",optimizer=opt,metrics=['accuracy'],)
 
 model.fit_generator(
    train_generator,
-    epochs=200,
+    epochs=20,
+    steps_per_epoch=len(X_train) // BATCH_SIZE,
     verbose=1
 )
 
