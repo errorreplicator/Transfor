@@ -20,9 +20,9 @@ with open(mypath/'X_Y_index_pairs.pklxy','rb') as file:
 with open(mypath/'tokenizer.pkltok','rb') as file:
     tokenizer = pickle.load(file)
 
-CORP_SIZE = 8000#len(tokenizer.index_word)+1
+CORP_SIZE =  len(tokenizer.index_word)+1
 EMBED_SIZE = 50
-BATCH_SIZE = 128
+BATCH_SIZE = 512
 
 # X_word = np.zeros((CORP_SIZE, EMBED_SIZE))
 # print(round(getsizeof(X_word) / 1024 / 1024,2), " MBs")
@@ -71,11 +71,44 @@ def data_generatorv2 (X_samples, y_samples, corp_size, batch_size=32, shuffle_da
     num_samples = len(X_samples)
     one_hot_matrix = []
     for i in range(corp_size):
-        one_hot_matrix.append([0 for _ in range(corp_size)])
+        one_hot_matrix.append([0 for x in range(corp_size)])
 
-    for x in range(1, corp_size + 1):
+    for x in range(1, corp_size):
         one_hot_matrix[x][x] = 1
 
+    # print(one_hot_matrix[:4])
+
+    while True:
+
+        if shuffle_data:
+            X_samples, y_samples = shuffle(X_samples, y_samples)
+
+        for offset in range(0,num_samples,batch_size): # take 1st 32(batch size) pairs
+
+            batch_X_samples = X_samples[offset:offset+batch_size] # prepare batch for Word Context
+            batch_y_samples = y_samples[offset:offset+batch_size] # batch for label
+
+            X_train_word = []
+            X_train_context = []
+            y_train = batch_y_samples # yes I know it's not needed but for clarity ...
+
+            for word_id_pair in batch_X_samples:
+
+                X_train_word.append(one_hot_matrix[word_id_pair[0]]) # One Hot for Word
+                X_train_context.append(one_hot_matrix[word_id_pair[1]]) # One Hot for Context
+
+            X_train_word = np.array(X_train_word)
+            X_train_context = np.array(X_train_context)
+            y_train = np.array(y_train)
+
+            yield [X_train_word,X_train_context],y_train
+
+
+        # print(len(X_train))
+
+
+def data_generatorv3 (X_samples, y_samples, corp_size, batch_size=32, shuffle_data=True):
+    num_samples = len(X_samples)
     while True:
 
         if shuffle_data:
@@ -93,9 +126,11 @@ def data_generatorv2 (X_samples, y_samples, corp_size, batch_size=32, shuffle_da
             y_train = batch_y_samples
 
             for sample in batch_X_samples:
+                X_word_vec = tf.one_hot(indices=sample[0], depth=corp_size)
+                X_context_vec = tf.one_hot(indices=sample[1],depth=corp_size)
 
-                X_train_word.append(one_hot_matrix[sample[0]+1])
-                X_train_context.append(one_hot_matrix[sample[1]+1])
+                X_train_word.append(X_word_vec)
+                X_train_context.append(X_context_vec)
 
             X_train_word = np.array(X_train_word)
             X_train_context = np.array(X_train_context)
@@ -104,9 +139,7 @@ def data_generatorv2 (X_samples, y_samples, corp_size, batch_size=32, shuffle_da
             yield [X_train_word,X_train_context],y_train
 
 
-print(len(X_train))
-
-train_generator = data_generatorv2(X_train,y_train,CORP_SIZE,batch_size=BATCH_SIZE,shuffle_data=False)
+train_generator = data_generatorv3(X_train,y_train,corp_size=CORP_SIZE,batch_size=BATCH_SIZE,shuffle_data=False)
 
 
 input_word = Input(shape=(CORP_SIZE,),name="word_layer_input")
@@ -123,20 +156,21 @@ output = Dense(1,activation='sigmoid',name="output_layer_1_sigmoid")(combined)
 
 model = Model(inputs = [word_layer.input,context_layer.input],outputs = output,name="final_model")
 
-print(model.summary())
+# print(model.summary())
 # plot_model(model, to_file=mypath/"model.png")
 
 opt = Adam(learning_rate=1e-2)
 
 model.compile(loss="binary_crossentropy",optimizer=opt,metrics=['accuracy'],)
-
+epochs = 10
 model.fit_generator(
    train_generator,
-    epochs=20,
+    epochs=epochs,
     steps_per_epoch=len(X_train) // BATCH_SIZE,
     verbose=1
 )
 
+model.save(mypath/f"model_{epochs}.pkl")
 
 
 

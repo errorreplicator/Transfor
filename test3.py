@@ -1,26 +1,24 @@
-import torch
-from torchtext.legacy.data import Field, LabelField, BucketIterator
-from torchtext.legacy.datasets import IMDB
-import random
-
-TEXT = Field(tokenize='spacy',tokenizer_language='en_core_web_sm')
-LABEL = LabelField(dtype=torch.float)
-
-train, test = IMDB.splits(TEXT,LABEL)
+import numpy as np
 
 
-# for x in range(5):
-#     print(x,len(vars(train.examples[x])['text']),vars(train[x])['label'] ,vars(train.examples[x])['text'])
+x = np.array([19,10,12,15,17,13,29])
 
-train, validate = train.split(random_state = random.seed(1234), split_ratio = 0.8)
 
-TEXT.build_vocab(train,max_size=10000)
-LABEL.build_vocab(test)
+print(x)
+print(np.argpartition(x,3)[:3])
+print(x[np.argpartition(x,3)[:3]])
+print(100*"#")
+print(x)
+print(np.argpartition(x,-3)[-3:])
+print(x[np.argpartition(x,-3)[-3:]])
 
-# print(TEXT.vocab)
-# print(TEXT.vocab.freqs.most_common(20))
-print(TEXT.vocab.itos[:10])
-print(TEXT.vocab.itos[22])
-print(TEXT.vocab.stoi['movie'])
-# print(TEXT.vocab.stoi['undirected'])
-# print(len(TEXT.vocab),len(LABEL.vocab))
+
+
+
+
+# print(x)
+# print(np.argpartition(x,-3)[-3:])
+# print(np.argpartition(x,3))
+# print(np.argpartition(x,0))
+# print(np.argsort(x))
+#[3,9,0,5 ,7 ,2 ,9 ,]
