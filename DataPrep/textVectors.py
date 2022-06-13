@@ -9,8 +9,8 @@ import pandas as pd
 # from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
-mypath = Path('/data/txtFiles/GutJustOne/')
-# mypath = Path('/data/txtFiles/GutSubset')
+# mypath = Path('/data/txtFiles/GutJustOne/')
+mypath = Path('/data/txtFiles/GutSubset')
 # mypath = Path('/data/txtFiles/Gut1k')
 # mypath = Path('/data/txtFiles/Gutenberg/txt')
 
@@ -23,13 +23,44 @@ SEED = 42
 AUTOTUNE = tf.data.AUTOTUNE
 max_sent_len = 80
 window_size = 2
-max_vocab_size = 10000#12673
+max_vocab_size = 7000#12673
+
+def word_count_tokenizer(tokenizer):
+    tokenizer = tokenizer
+    my_dict = tokenizer.word_counts
+    howmany_values = []
+    for key, value in my_dict.items():
+        if value not in howmany_values:
+            howmany_values.append(value)
+    len_of_howmany_val = len(howmany_values)
+    howmany_values.sort()
+    word_freq_table = [0 for _ in range(len_of_howmany_val)]
+    word_list_table = [[] for _ in range(len_of_howmany_val)]
+    for key, value in my_dict.items():
+        index_of_value = howmany_values.index(value)
+        word_freq_table[index_of_value]+=1
+        if key not in word_list_table[index_of_value]:
+            word_list_table[index_of_value].append(key)
+
+    for x in range(len_of_howmany_val):
+        # print(f"Words appiring {howmany_values[x]} times in the corpus is how many: {word_freq_table[x]} and list of those words is: {word_list_table[x]}")
+        print(f"Words appiring {howmany_values[x]} times in the corpus is how many: {word_freq_table[x]}")
+
 
 
 def get_sent_indexed(list_of_sentences, save=True):
-    tokenizer = Tokenizer()
+    tokenizer = Tokenizer(oov_token='<OOV>')
     tokenizer.fit_on_texts(list_of_sentences)
+    # word_count_tokenizer(tokenizer)  # word count statistics
+    # print(len(tokenizer.index_word))
+    tokenizer.num_words = max_vocab_size # LIMITS NUMBER OF WORDS TO TOP X FREQUENT
+    # print(len(tokenizer.index_word))
+    # print(100*"*")
+    # word_count_tokenizer(tokenizer) # word count statistics
+
+
     sent_indexed = tokenizer.texts_to_sequences(list_of_sentences)
+    # print(len(sent_indexed))
     if save:
         with open(mypath / 'tokenizer.pkltok', 'wb') as f:
             pickle.dump((tokenizer), f)
@@ -85,14 +116,16 @@ def get_neg_samples(pos_sam_pairs,vocab_size,neg_sample_size):
 
 
 sentence_indexed = get_sent_indexed(master_sentence)
+
 pos_samples_pairs = get_pos_samples(sentence_indexed)
 pos_samples_pairs = remove_duplicates(pos_samples_pairs)
 
 pos_samples_pairs = pos_samples_pairs#[:10000] ##??????????????????????????????
-
 print("starting neg sampling")
 neg_samples_pairs = get_neg_samples(pos_samples_pairs,vocab_size=max_vocab_size,neg_sample_size=2)
 print("just finished neg sampling")
+
+
 len_pos = len(pos_samples_pairs)
 len_neg = len(neg_samples_pairs)
 
@@ -115,11 +148,6 @@ with open(mypath / 'X_Y_index_pairs.pklxy', 'wb') as f:
 print(f"Train X size {len(X_train)} and Y {len(y_train)}")
 # print(f"Test X size{len(x_test)} and Y {len(y_test)}")
 print("ALL GOOD - goodby")
-
-
-
-
-
 
 
 

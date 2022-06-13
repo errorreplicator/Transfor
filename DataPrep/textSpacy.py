@@ -27,8 +27,8 @@ def get_sentences(sentences):
             list_len.append(lenght)
     return (new_list,list_len)
 
-mypath = Path('/data/txtFiles/GutJustOne/')
-# mypath = Path('/data/txtFiles/GutSubset')
+# mypath = Path('/data/txtFiles/GutJustOne/')
+mypath = Path('/data/txtFiles/GutSubset')
 # mypath = Path('/data/txtFiles/Gut1k')
 # mypath = Path('/data/txtFiles/Gutenberg/txt')
 fileNames = []
@@ -36,22 +36,27 @@ fileNames = []
 def translate_to_sentences(path):
     for file in path.iterdir():
         # print(file.name)
-        if file.is_file() and file.suffix == '.txt':
+        if file.is_file() and file.suffix == '.txt': # list of all files in the directory
             fileNames.append(path / file.name)
 
     master_sentence = []
     master_len = []
     # print(len(fileNames))
     idx = 1
-    for file in fileNames:
+    for file in fileNames: #for each file in the directory
         with open(file,"r") as file:
-            text = file.read().replace('\n\n'," ").replace("\n", " ").replace("\t"," ") # is it needed if uptop in remove 4 words fun long whitespaces is removed ?
-            doc = nlp(text)
-            sentences = doc.sents
-            sentence_list,sentence_len = get_sentences(sentences=sentences)
+            text = file.read().replace('\n\n'," ").replace("\n", " ").replace("\t"," ") # is it needed if get_sentences fun contains cleanup ??
+            doc = nlp(text) #create spacy token
+            sentences = doc.sents # split text into sentences ?
+            sentence_list,sentence_len = get_sentences(sentences=sentences) # just for the text / sentences clean up and remove too short sntences.
+            # sentence_list => list of lists containing all sentences
+            # sentence_len => list of numbers of sentence lenghts
+
             master_sentence+=sentence_list
             master_len+=sentence_len
-            print(f"Proc file {idx} // {len(fileNames)}.Sent len {len(master_sentence)} len len {len(master_len)} -- {file.name}")
+
+            print(f"Proc file {idx} // {len(fileNames)}.Sent len {len(master_sentence)} len of len {len(master_len)} -- {file.name}")
+
             idx+=1
             if idx%100 == 0:
                 with open(path / f'1_master_sentence_{idx}.pkl', 'wb') as f:

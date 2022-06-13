@@ -8,8 +8,8 @@ from keras.optimizers import Adam
 import tensorflow as tf
 from sys import getsizeof
 from sklearn.utils import shuffle
-mypath = Path('/data/txtFiles/GutJustOne/')
-# mypath = Path('/data/txtFiles/GutSubset')
+# mypath = Path('/data/txtFiles/GutJustOne/')
+mypath = Path('/data/txtFiles/GutSubset')
 # mypath = Path('/data/txtFiles/Gut1k')
 # mypath = Path('/data/txtFiles/Gutenberg/txt')
 
@@ -20,9 +20,11 @@ with open(mypath/'X_Y_index_pairs.pklxy','rb') as file:
 with open(mypath/'tokenizer.pkltok','rb') as file:
     tokenizer = pickle.load(file)
 
-CORP_SIZE =  len(tokenizer.index_word)+1
+CORP_SIZE =  7000+1#len(tokenizer.index_word)+1
+
 EMBED_SIZE = 50
-BATCH_SIZE = 512
+BATCH_SIZE = 128
+EPOCHS = 15
 
 # X_word = np.zeros((CORP_SIZE, EMBED_SIZE))
 # print(round(getsizeof(X_word) / 1024 / 1024,2), " MBs")
@@ -71,7 +73,7 @@ def data_generatorv2 (X_samples, y_samples, corp_size, batch_size=32, shuffle_da
     num_samples = len(X_samples)
     one_hot_matrix = []
     for i in range(corp_size):
-        one_hot_matrix.append([0 for x in range(corp_size)])
+        one_hot_matrix.append([0 for _ in range(corp_size)])
 
     for x in range(1, corp_size):
         one_hot_matrix[x][x] = 1
@@ -139,7 +141,7 @@ def data_generatorv3 (X_samples, y_samples, corp_size, batch_size=32, shuffle_da
             yield [X_train_word,X_train_context],y_train
 
 
-train_generator = data_generatorv3(X_train,y_train,corp_size=CORP_SIZE,batch_size=BATCH_SIZE,shuffle_data=False)
+train_generator = data_generatorv2(X_train,y_train,corp_size=CORP_SIZE,batch_size=BATCH_SIZE,shuffle_data=True)
 
 
 input_word = Input(shape=(CORP_SIZE,),name="word_layer_input")
@@ -162,7 +164,7 @@ model = Model(inputs = [word_layer.input,context_layer.input],outputs = output,n
 opt = Adam(learning_rate=1e-2)
 
 model.compile(loss="binary_crossentropy",optimizer=opt,metrics=['accuracy'],)
-epochs = 10
+epochs = EPOCHS
 model.fit_generator(
    train_generator,
     epochs=epochs,
